@@ -502,7 +502,7 @@ int alphabeta(Position &pos,
               Stack *const stack,
               int64_t (&hh_table)[64][64],
               vector<BB> &hash_history,
-              const int do_null = true) {
+              const int nullmoves = 0) {
     const auto in_check = attacked(pos, lsb(pos.colour[0] & pos.pieces[King]));
     const int static_eval = eval(pos);
 
@@ -541,7 +541,7 @@ int alphabeta(Position &pos,
             }
 
             // Null move pruning
-            if (depth > 2 && static_eval >= beta && do_null) {
+            if (depth > 1 && static_eval >= beta && nullmoves < 2) {
                 auto npos = pos;
                 flip(npos);
                 npos.ep = 0;
@@ -558,7 +558,7 @@ int alphabeta(Position &pos,
                                stack,
                                hh_table,
                                hash_history,
-                               false) >= beta) {
+                               nullmoves + 1) >= beta) {
                     return beta;
                 }
             }
@@ -577,8 +577,7 @@ int alphabeta(Position &pos,
                                  stop,
                                  stack,
                                  hh_table,
-                                 hash_history,
-                                 do_null);
+                                 hash_history);
             }
         }
     }

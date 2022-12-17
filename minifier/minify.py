@@ -381,7 +381,7 @@ def rename(tokens):
         "old_hash":"cf",
         "phase":"cg",
         "phases":"ch",
-        "do_null":"ci",
+        "nullmoves":"ci",
         "full_window":"cj",
         "moves_evaluated":"ck",
         "keys":"cl",
