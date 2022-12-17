@@ -643,16 +643,13 @@ int alphabeta(Position &pos,
         moves[best_move_index] = moves[i];
         move_scores[best_move_index] = move_scores[i];
 
-        // Forward futility pruning
-        if (!in_qsearch
-            && depth <= 5
-            && !in_check) {
-            auto c = m[piece_on(pos, move.to)];
-            if (static_eval + c < alpha - (175 * depth)) {
+        // Delta pruning
+        if (in_qsearch && !in_check) {
+            if (static_eval + 50 + m[piece_on(pos, move.to)] < alpha) {
                 best_score = alpha;
                 break;
             }
-        } /* else if in qsearch */
+        }
 
         auto npos = pos;
         if (!makemove(npos, move)) {
