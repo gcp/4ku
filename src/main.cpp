@@ -343,6 +343,7 @@ void generate_piece_moves(Move *const movelist,
 
 const int phases[] = {0, 1, 1, 2, 4, 0};
 const int material[] = {S(79, 128), S(421, 292), S(404, 327), S(556, 596), S(1271, 1060), 0};
+const int m[] = {128, 421, 404, 596, 1271, 0, 0};
 const int psts[][4] = {
     {S(-18, -1), S(-0, -6), S(9, 6), S(9, 1)},
     {S(-22, -0), S(-5, -2), S(8, 1), S(20, 0)},
@@ -641,6 +642,17 @@ int alphabeta(Position &pos,
 
         moves[best_move_index] = moves[i];
         move_scores[best_move_index] = move_scores[i];
+
+        // Forward futility pruning
+        if (!in_qsearch
+            && depth <= 5
+            && !in_check) {
+            auto c = m[piece_on(pos, move.to)];
+            if (static_eval + c < alpha - (175 * depth)) {
+                best_score = alpha;
+                continue;
+            }
+        } /* else if in qsearch */
 
         auto npos = pos;
         if (!makemove(npos, move)) {
