@@ -650,7 +650,7 @@ int alphabeta(Position &pos,
             auto c = m[piece_on(pos, move.to)];
             if (static_eval + c < alpha - (175 * depth)) {
                 best_score = alpha;
-                continue;
+                break;
             }
         } /* else if in qsearch */
 
