@@ -601,12 +601,12 @@ int alphabeta(Position &pos,
             }
         }
         // SE: Fail high or PV
-        if (depth > 5 && tt_entry.flag == 2) {
+        if (depth >= 6 && tt_entry.flag == 2) {
             // Quick check to make sure we fail high
             auto score = alphabeta(pos,
                                    beta - 1,
                                    beta,
-                                   (depth - 1) / 2,
+                                   depth / 2,
                                    ply,
                                    // minify delete on
                                    nodes,
@@ -621,7 +621,7 @@ int alphabeta(Position &pos,
                 score = alphabeta(pos,
                                   beta - 40,
                                   beta - 40 + 1,
-                                  (depth - 1) / 2,
+                                  depth / 2,
                                   ply,
                                   // minify delete on
                                   nodes,
