@@ -503,7 +503,8 @@ int alphabeta(Position &pos,
               Stack *const stack,
               int64_t (&hh_table)[2][64][64],
               vector<BB> &hash_history,
-              const int do_null = true) {
+              const int do_null = true,
+              const Move skip_move = Move{}) {
     const auto in_check = attacked(pos, lsb(pos.colour[0] & pos.pieces[King]));
     const int static_eval = eval(pos);
 
@@ -584,8 +585,9 @@ int alphabeta(Position &pos,
         }
     }
 
+    auto tt_singular = false;
     // TT Probing
-    if (tt_entry.key == tt_key) {
+    if (tt_entry.key == tt_key && skip_move == Move{}) {
         tt_move = tt_entry.move;
         if (ply > 0 && tt_entry.depth >= depth) {
             if (tt_entry.flag == 0) {
@@ -596,6 +598,46 @@ int alphabeta(Position &pos,
             }
             if (tt_entry.flag == 2 && tt_entry.score >= beta) {
                 return tt_entry.score;
+            }
+        }
+        // SE: Fail high or PV
+        if (depth > 5 && tt_entry.flag == 2) {
+            // Quick check to make sure we fail high
+            auto score = alphabeta(pos,
+                                   beta - 1,
+                                   beta,
+                                   (depth - 1) / 2,
+                                   ply,
+                                   // minify delete on
+                                   nodes,
+                                   // minify delete off
+                                   stop_time,
+                                   stop,
+                                   stack,
+                                   hh_table,
+                                   hash_history,
+                                   do_null);
+            if (score >= beta) {
+                score = alphabeta(pos,
+                                  beta - 40,
+                                  beta - 40 + 1,
+                                  (depth - 1) / 2,
+                                  ply,
+                                  // minify delete on
+                                  nodes,
+                                  // minify delete off
+                                  stop_time,
+                                  stop,
+                                  stack,
+                                  hh_table,
+                                  hash_history,
+                                  do_null,
+                                  tt_move);
+                // If we're not allowed to play the TT move, does our
+                // score suddenly sink?
+                if (score <= beta - 40) {
+                    tt_singular = true;
+                }
             }
         }
     }
@@ -643,6 +685,12 @@ int alphabeta(Position &pos,
         moves[best_move_index] = moves[i];
         move_scores[best_move_index] = move_scores[i];
 
+        // Used for singular extensions
+        if (move == skip_move) {
+            best_score = alpha;
+            continue;
+        }
+
         // Delta pruning
         if (in_qsearch && !in_check && static_eval + 50 + max_material[piece_on(pos, move.to)] < alpha) {
             best_score = alpha;
@@ -664,7 +712,7 @@ int alphabeta(Position &pos,
             score = -alphabeta(npos,
                                -beta,
                                -alpha,
-                               depth - 1,
+                               depth - 1 + (tt_singular && move == tt_move),
                                ply + 1,
                                // minify delete on
                                nodes,
@@ -733,7 +781,7 @@ int alphabeta(Position &pos,
     }
 
     // Save to TT
-    if (tt_entry.key != tt_key || depth >= tt_entry.depth || tt_flag == 0) {
+    if (skip_move == Move{} && (tt_entry.key != tt_key || depth >= tt_entry.depth || tt_flag == 0)) {
         tt_entry = TT_Entry{tt_key, best_move, best_score, in_qsearch ? 0 : depth, tt_flag};
     }
 

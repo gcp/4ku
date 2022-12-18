@@ -419,6 +419,8 @@ def rename(tokens):
         "research":"dt",
         "newscore":"du",
         "max_material":"m",
+        "skip_move":"sm",
+        "tt_singular":"ts",
         # Labels
         "do_search":"bk",
         "full_search":"bl",
