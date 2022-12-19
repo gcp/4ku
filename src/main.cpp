@@ -356,6 +356,7 @@ const int centralities[] = {S(16, -14), S(15, 15), S(22, 6), S(-7, -0), S(-1, 20
 const int outside_files[] = {S(2, -6), S(-3, -5), S(6, -4), S(-6, -2), S(-4, -1), S(2, -2)};
 const int pawn_protection[] = {S(10, 15), S(11, 21), S(-6, 18), S(-4, 13), S(-6, 17), S(-49, 22)};
 const int passers[] = {S(20, 6), S(10, 11), S(-2, 26), S(-7, 42), S(20, 111), S(107, 205)};
+const int passer_semi_connected = S(4, 8);
 const int pawn_doubled = S(-21, -27);
 const int pawn_passed_blocked = S(4, -46);
 const int bishop_pair = S(33, 56);
@@ -418,6 +419,11 @@ const int king_shield[] = {S(24, -11), S(12, -16)};
                     blockers = nw(blockers) | ne(blockers);
                     if (!(blockers & pawns[1])) {
                         score += passers[rank - 1];
+                        // Either we're connected passed pawns
+                        // or we can unblock a further advanced pawn.
+                        if (blockers & pawns[0]) {
+                            score += passer_semi_connected * rank;
+                        }
 
                         // Blocked passed pawns
                         if (north(piece_bb) & pos.colour[1]) {

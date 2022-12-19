@@ -419,6 +419,7 @@ def rename(tokens):
         "research":"dt",
         "newscore":"du",
         "max_material":"m",
+        "passer_semi_connected":"sc",
         # Labels
         "do_search":"bk",
         "full_search":"bl",
