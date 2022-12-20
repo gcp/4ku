@@ -341,6 +341,10 @@ void generate_piece_moves(Move *const movelist,
     return (eg << 16) + mg;
 }
 
+[[nodiscard]] int dist(const int a, const int b) {
+    return max(abs((a / 8) - (b / 8)), abs((a % 8) - (b % 8)));
+}
+
 const int phases[] = {0, 1, 1, 2, 4, 0};
 const int max_material[] = {133, 418, 401, 603, 1262, 0, 0};
 const int material[] = {S(75, 133), S(418, 295), S(401, 330), S(544, 603), S(1262, 1072), 0};
@@ -369,6 +373,7 @@ const int pawn_attacked[] = {S(-61, -18), S(-53, -42)};
 [[nodiscard]] int eval(Position &pos) {
     // Include side to move bonus
     int score = S(10, 10);
+    int ks[2] = {0, 0};
     int phase = 0;
 
     for (int c = 0; c < 2; ++c) {
@@ -433,8 +438,7 @@ const int pawn_attacked[] = {S(-61, -18), S(-53, -42)};
                         // King defense/attack
                         // king distance to square in front of passer
                         for (int i = 0; i < 2; ++i) {
-                            score += pawn_passed_king_distance[i] * (rank - 1) *
-                                     max(abs((kings[i] / 8) - (rank + 1)), abs((kings[i] % 8) - file));
+                            score += pawn_passed_king_distance[i] * (rank - 1) * dist(kings[i], sq + 8);
                         }
                     }
 
@@ -442,6 +446,8 @@ const int pawn_attacked[] = {S(-61, -18), S(-53, -42)};
                     if ((north(piece_bb) | north(north(piece_bb))) & pawns[0]) {
                         score += pawn_doubled;
                     }
+
+                    ks[1] += max(0, 3 - dist(sq, kings[1]));
                 } else if (p == Rook) {
                     // Rook on open or semi-open files
                     const BB file_bb = 0x101010101010101ULL << file;
@@ -451,16 +457,25 @@ const int pawn_attacked[] = {S(-61, -18), S(-53, -42)};
                         } else {
                             score += rook_semi_open;
                         }
+
+                        ks[1] += 2 * abs(file - (kings[1] % 8)) <= 1;
                     }
 
                     // Rook on 7th or 8th rank
                     if (rank >= 6) {
                         score += rook_rank78;
                     }
+
+                    ks[1] += max(0, 3 - dist(sq, kings[1]));
+                } else if (p == Bishop || p == Knight) {
+                    ks[1] += max(0, 3 - dist(sq, kings[1]));
+                } else if (p == Queen) {
+                    ks[1] += max(0, 5 - dist(sq, kings[1]));
                 } else if (p == King && piece_bb & 0xE7) {
                     const BB shield = file < 3 ? 0x700 : 0xE000;
                     score += count(shield & pawns[0]) * king_shield[0];
                     score += count(north(shield) & pawns[0]) * king_shield[1];
+                    ks[0] += 3 - count((shield | north(shield)) & pawns[0]);
 
                     // C3D7 = Reasonable king squares
                     score += !(piece_bb & 0xC3D7) * king_shield[2];
@@ -472,6 +487,9 @@ const int pawn_attacked[] = {S(-61, -18), S(-53, -42)};
 
         score = -score;
     }
+
+    score -= ks[0] * ks[0] * S(3, 0);
+    score += ks[1] * ks[1] * S(3, 0);
 
     // Tapered eval
     return ((short)score * phase + ((score + 0x8000) >> 16) * (24 - phase)) / 24;
