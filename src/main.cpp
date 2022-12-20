@@ -635,7 +635,7 @@ int alphabeta(Position &pos,
 
     int moves_evaluated = 0;
     int best_score = -INF;
-    Move best_move{};
+    auto best_move = tt_move;
     uint16_t tt_flag = 1;  // Alpha flag
     hash_history.emplace_back(tt_key);
     for (int i = 0; i < num_moves; ++i) {
