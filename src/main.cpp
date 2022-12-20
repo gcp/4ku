@@ -708,15 +708,16 @@ int alphabeta(Position &pos,
                 goto full_window;
             }
         }
-        moves_evaluated++;
-        if (piece_on(pos, move.to) == None) {
-            quiet_moves_evaluated++;
-        }
 
         // Exit early if out of time
         if (stop || now() >= stop_time) {
             hash_history.pop_back();
             return 0;
+        }
+
+        moves_evaluated++;
+        if (piece_on(pos, move.to) == None) {
+            quiet_moves_evaluated++;
         }
 
         if (score > best_score) {
@@ -727,8 +728,12 @@ int alphabeta(Position &pos,
                 alpha = score;
                 stack[ply].move = move;
             }
-        } else if (!in_qsearch && !in_check && alpha == beta - 1 && depth <= 3 && moves_evaluated >= (depth * 3) + 2 &&
-                   static_eval < alpha - (50 * depth) && best_move_score < (1LL << 50)) {
+        }
+
+        if (!in_qsearch && !in_check && alpha == beta - 1 &&
+            ((depth <= 3 && moves_evaluated >= (depth * 3) + 2 && static_eval < alpha - (50 * depth) &&
+              best_move_score < (1LL << 50)) ||
+             (quiet_moves_evaluated > 3 + 2 * depth * depth))) {
             best_score = alpha;
             break;
         }
@@ -740,11 +745,6 @@ int alphabeta(Position &pos,
                 hh_table[pos.flipped][move.from][move.to] += depth * depth;
                 stack[ply].killer = move;
             }
-            break;
-        }
-
-        // Late move pruning based on quiet move count
-        if (!in_check && alpha == beta - 1 && quiet_moves_evaluated > 3 + 2 * depth * depth) {
             break;
         }
     }
