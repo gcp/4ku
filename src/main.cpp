@@ -474,7 +474,18 @@ const int pawn_attacked[] = {S(-61, -18), S(-53, -42)};
     }
 
     // Tapered eval
-    return ((short)score * phase + ((score + 0x8000) >> 16) * (24 - phase)) / 24;
+    auto r = ((short)score * phase + ((score + 0x8000) >> 16) * (24 - phase)) / 24;
+
+    // Insufficient material: lone N or B
+    // This is tricky because of the S(x,y) storage, so we do it now.
+    if (count(pos.colour[0]) == 2 && (pos.colour[0] & (pos.pieces[Bishop] | pos.pieces[Knight]))) {
+        r = min(0, r);
+    }
+    if (count(pos.colour[1]) == 2 && (pos.colour[1] & (pos.pieces[Bishop] | pos.pieces[Knight]))) {
+        r = max(0, r);
+    }
+
+    return r;
 }
 
 [[nodiscard]] auto get_hash(const Position &pos) {
