@@ -423,6 +423,7 @@ def rename(tokens):
         "attacked_by_pawns":"dv",
         "pawn_attacked":"dw",
         "no_move":"dx",
+        "stm_bonus":"dy",
         # Labels
         "do_search":"bk",
         "full_search":"bl",
