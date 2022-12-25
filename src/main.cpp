@@ -731,7 +731,7 @@ int alphabeta(Position &pos,
         } else {
             // Late move reduction
             int reduction = max(0,
-                                depth > 3 && moves_evaluated > 3
+                                depth > 3 && moves_evaluated > 3 && piece_on(pos, move.to) == None
                                     ? 1 + moves_evaluated / 16 + depth / 10 + (alpha == beta - 1) - improving
                                     : 0);
 
