@@ -31,6 +31,7 @@
 
 #define MATE_SCORE (1 << 15)
 #define INF (1 << 16)
+#define W(x) (x)
 
 using namespace std;
 
@@ -565,22 +566,22 @@ int alphabeta(Position &pos,
 
         if (!in_check && alpha == beta - 1) {
             // Reverse futility pruning
-            if (depth < 5) {
-                const int margins[] = {0, 50, 100, 200, 300};
+            if (depth < W(5)) {
+                const int margins[] = {W(0), W(50), W(100), W(200), W(300)};
                 if (static_eval - margins[depth - improving] >= beta) {
                     return beta;
                 }
             }
 
             // Null move pruning
-            if (depth > 2 && static_eval >= beta && do_null) {
+            if (depth > W(2) && static_eval >= beta && do_null) {
                 auto npos = pos;
                 flip(npos);
                 npos.ep = 0;
                 if (-alphabeta(npos,
                                -beta,
                                -beta + 1,
-                               depth - 4 - depth / 6,
+                               depth - W(4) - depth / W(6),
                                ply + 1,
                                // minify enable filter delete
                                nodes,
@@ -615,7 +616,7 @@ int alphabeta(Position &pos,
         }
     }
     // Internal iterative reduction
-    else if (depth > 3) {
+    else if (depth > W(3)) {
         depth--;
     }
 
@@ -664,14 +665,14 @@ int alphabeta(Position &pos,
         move_scores[best_move_index] = move_scores[i];
 
         // Delta pruning
-        if (in_qsearch && !in_check && static_eval + 50 + max_material[piece_on(pos, move.to)] < alpha) {
+        if (in_qsearch && !in_check && static_eval + W(50) + max_material[piece_on(pos, move.to)] < alpha) {
             best_score = alpha;
             break;
         }
 
         // Forward futility pruning
-        if (!in_qsearch && !in_check && !(move == tt_move) &&
-            static_eval + 150 * depth + max_material[piece_on(pos, move.to)] < alpha) {
+        if (!in_qsearch && !in_check && !(move == tt_move) && depth < W(10) &&
+            static_eval + W(150) * depth + max_material[piece_on(pos, move.to)] < alpha) {
             best_score = alpha;
             break;
         }
@@ -703,8 +704,8 @@ int alphabeta(Position &pos,
                                hash_history);
         } else {
             // Late move reduction
-            int reduction = depth > 3 && moves_evaluated > 3 && piece_on(pos, move.to) == None
-                                ? 1 + moves_evaluated / 16 + depth / 10 + (alpha == beta - 1) - improving
+            int reduction = depth > W(3) && moves_evaluated > W(3) && piece_on(pos, move.to) == None
+                                ? W(1) + moves_evaluated / W(16) + depth / W(10) + (alpha == beta - 1) - improving
                                 : 0;
 
         zero_window:
@@ -751,8 +752,9 @@ int alphabeta(Position &pos,
                 alpha = score;
                 stack[ply].move = move;
             }
-        } else if (!in_qsearch && !in_check && alpha == beta - 1 && depth <= 3 && moves_evaluated >= (depth * 3) + 2 &&
-                   static_eval < alpha - (50 * depth) && best_move_score < (1LL << 50)) {
+        } else if (!in_qsearch && !in_check && alpha == beta - 1 && depth <= W(3) &&
+                   moves_evaluated >= (depth * W(3)) + W(2) && static_eval < alpha - (W(50) * depth) &&
+                   best_move_score < (1LL << 50)) {
             best_score = alpha;
             break;
         }
@@ -768,7 +770,7 @@ int alphabeta(Position &pos,
         }
 
         // Late move pruning based on quiet move count
-        if (!in_check && alpha == beta - 1 && quiet_moves_evaluated > 3 + 2 * depth * depth) {
+        if (!in_check && alpha == beta - 1 && quiet_moves_evaluated > W(3) + W(2) * depth * depth) {
             break;
         }
     }
@@ -856,7 +858,7 @@ auto iteratively_deepen(Position &pos,
 
     int score = 0;
     for (int i = 1; i < 128; ++i) {
-        auto window = 40;
+        auto window = W(40);
         auto research = 0;
     research:
         const auto newscore = alphabeta(pos,
@@ -923,7 +925,7 @@ auto iteratively_deepen(Position &pos,
         score = newscore;
 
         // Early exit after completed ply
-        if (!research && now() >= start_time + allocated_time / 10) {
+        if (!research && now() >= start_time + allocated_time / W(10)) {
             break;
         }
     }
@@ -1075,7 +1077,7 @@ int main(
             // minify disable filter delete
 
             const auto start = now();
-            const auto allocated_time = (pos.flipped ? btime : wtime) / 3;
+            const auto allocated_time = (pos.flipped ? btime : wtime) / W(3);
 
             // Lazy SMP
             vector<thread> threads;
