@@ -31,6 +31,7 @@
 
 #define MATE_SCORE (1 << 15)
 #define INF (1 << 16)
+#define W(x) (x)
 
 using namespace std;
 
@@ -362,32 +363,32 @@ void generate_piece_moves(Move *const movelist,
 
 const int phases[] = {0, 1, 1, 2, 4, 0};
 const int max_material[] = {133, 418, 401, 603, 1262, 0, 0};
-const int material[] = {S(80, 133), S(418, 292), S(401, 328), S(546, 603), S(1262, 1065), 0};
+const int material[] = {S(83, 131), S(419, 291), S(400, 332), S(546, 604), S(1259, 1066), 0};
 const int psts[][4] = {
-    {S(-19, 0), S(-1, -2), S(6, 0), S(6, 11)},
-    {S(-25, 2), S(-10, -2), S(18, 2), S(23, 1)},
-    {S(-1, 1), S(-6, 1), S(-2, 2), S(3, 6)},
-    {S(-21, 3), S(0, -15), S(-7, 15), S(21, 9)},
-    {S(-4, -32), S(1, -15), S(-28, 19), S(22, 20)},
-    {S(-49, 5), S(-4, -5), S(43, 0), S(4, 4)},
+    {S(-24, -2), S(-1, -3), S(7, 0), S(4, 11)},
+    {S(-23, 1), S(-9, -5), S(16, 2), S(19, 2)},
+    {S(-4, 5), S(-6, -2), S(-2, 3), S(6, 7)},
+    {S(-20, 4), S(0, -16), S(-3, 13), S(20, 8)},
+    {S(-4, -33), S(3, -16), S(-30, 18), S(22, 24)},
+    {S(-53, 7), S(-3, -7), S(42, 3), S(4, 6)},
 };
-const int centralities[] = {S(9, -13), S(20, 16), S(26, 7), S(-2, 2), S(1, 27), S(-20, 17)};
-const int outside_files[] = {S(3, -5), S(-2, -5), S(8, 0), S(-4, 1), S(-3, -5), S(-5, 2)};
-const int pawn_protection[] = {S(15, 20), S(14, 17), S(-4, 18), S(1, 8), S(-5, 19), S(-43, 15)};
-const int passers[] = {S(13, 8), S(23, -2), S(29, 12), S(26, 35), S(69, 103), S(154, 201)};
-const int pawn_doubled = S(-23, -27);
-const int pawn_passed_blocked = S(-5, -34);
-const int pawn_passed_king_distance[] = {S(0, -3), S(-2, 5)};
-const int bishop_pair = S(36, 57);
-const int rook_open = S(74, 1);
-const int rook_semi_open = S(35, 11);
-const int rook_rank78 = S(34, 1);
-const int king_shield[] = {S(36, -13), S(16, -15), S(-89, 30)};
-const int pawn_attacked[] = {S(-64, -14), S(-55, -42)};
+const int centralities[] = {S(4, -12), S(22, 15), S(26, 5), S(-3, 3), S(-3, 26), S(-21, 21)};
+const int outside_files[] = {S(1, -7), S(-2, -6), S(7, -1), S(-3, -1), S(0, -3), S(-5, 5)};
+const int pawn_protection[] = {S(13, 21), S(14, 19), S(-1, 21), S(3, 8), S(-5, 16), S(-41, 16)};
+const int passers[] = {S(14, 9), S(23, 1), S(28, 13), S(28, 33), S(68, 104), S(156, 201)};
+const int pawn_doubled = S(-20, -29);
+const int pawn_passed_blocked = S(-3, -37);
+const int pawn_passed_king_distance[] = {S(-1, -3), S(-2, 6)};
+const int bishop_pair = S(37, 56);
+const int rook_open = S(72, 0);
+const int rook_semi_open = S(33, 8);
+const int rook_rank78 = S(34, 3);
+const int king_shield[] = {S(38, -12), S(15, -15), S(-94, 31)};
+const int pawn_attacked[] = {S(-64, -17), S(-54, -45)};
 
 [[nodiscard]] int eval(Position &pos) {
     // Include side to move bonus
-    int score = S(16, 8);
+    int score = S(18, 8);
     int phase = 0;
 
     for (int c = 0; c < 2; ++c) {
@@ -566,8 +567,8 @@ int alphabeta(Position &pos,
 
         if (!in_check && alpha == beta - 1) {
             // Reverse futility pruning
-            if (depth < 5) {
-                const int margins[] = {0, 50, 100, 200, 300};
+            if (depth < W(4)) {
+                const int margins[] = {W(5), W(50), W(100), W(200)};
                 if (static_eval - margins[depth - improving] >= beta) {
                     return beta;
                 }
@@ -581,7 +582,7 @@ int alphabeta(Position &pos,
                 if (-alphabeta(npos,
                                -beta,
                                -beta + 1,
-                               depth - 4 - depth / 6,
+                               depth - W(4) - depth / W(5),
                                ply + 1,
                                // minify enable filter delete
                                nodes,
@@ -616,7 +617,7 @@ int alphabeta(Position &pos,
         }
     }
     // Internal iterative reduction
-    else if (depth > 3) {
+    else if (depth > W(4)) {
         depth--;
     }
 
@@ -671,8 +672,8 @@ int alphabeta(Position &pos,
         }
 
         // Forward futility pruning
-        if (!in_qsearch && !in_check && !(move == tt_move) &&
-            static_eval + 150 * depth + max_material[piece_on(pos, move.to)] < alpha) {
+        if (!in_qsearch && !in_check && !(move == tt_move) && depth < W(13) &&
+            static_eval + W(150) * depth + max_material[piece_on(pos, move.to)] < alpha) {
             best_score = alpha;
             break;
         }
@@ -932,7 +933,7 @@ auto iteratively_deepen(Position &pos,
         score = newscore;
 
         // Early exit after completed ply
-        if (!research && now() >= start_time + allocated_time / 10) {
+        if (!research && now() >= start_time + allocated_time / W(10)) {
             break;
         }
     }
@@ -1084,7 +1085,7 @@ int main(
             // minify disable filter delete
 
             const auto start = now();
-            const auto allocated_time = (pos.flipped ? btime : wtime) / 3;
+            const auto allocated_time = (pos.flipped ? btime : wtime) / W(3);
 
             // Lazy SMP
             vector<thread> threads;
