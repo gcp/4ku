@@ -929,12 +929,12 @@ auto iteratively_deepen(Position &pos,
             goto research;
         }
 
-        score = newscore;
-
         // Early exit after completed ply
-        if (!research && now() >= start_time + allocated_time / 10) {
+        if ((!research || newscore > score) && now() >= start_time + allocated_time / 10) {
             break;
         }
+
+        score = newscore;
     }
     return stack[0].move;
 }
