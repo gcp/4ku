@@ -643,12 +643,24 @@ int alphabeta(Position &pos,
 
     auto &moves = stack[ply].moves;
     auto &move_scores = stack[ply].move_scores;
+    auto moves_scored = false;
     const int num_moves = movegen(pos, moves, in_qsearch);
     for (int i = 0; i < num_moves; ++i) {
-        // Score at the first loop, except if we have a hash move,
-        // then we'll use that first and delay work until the second iteration.
-        if (i == !(tt_move == no_move)) {
+        // Find best move remaining
+        int best_move_index = i;
+        // First iteration, and we have a hash move. We may be able
+        // to skip all ordering work if we get a cutoff.
+        if (i == 0 && !(tt_move == no_move)) {
             for (int j = 0; j < num_moves; ++j) {
+                if (moves[j] == tt_move) {
+                    best_move_index = j;
+                    goto score_done;
+                }
+            }
+        }
+        // No usable hash move, score all moves.
+        if (!moves_scored) {
+            for (int j = i; j < num_moves; ++j) {
                 const int capture = piece_on(pos, moves[j].to);
                 if (capture != None) {
                     move_scores[j] = ((capture + 1) * (1LL << 54)) - piece_on(pos, moves[j].from);
@@ -658,28 +670,17 @@ int alphabeta(Position &pos,
                     move_scores[j] = hh_table[pos.flipped][moves[j].from][moves[j].to];
                 }
             }
+            moves_scored = true;
         }
 
-        // Find best move remaining
-        int best_move_index = i;
-        // If there's a TT move, we'll find it in the first loop
-        // and needn't search nor compare further.
-        if (i == 0 && !(tt_move == no_move)) {
-            for (int j = 0; j < num_moves; ++j) {
-                if (moves[j] == tt_move) {
-                    best_move_index = j;
-                    break;
-                }
-            }
-        } else {
-            // Find best scored move
-            for (int j = 0; j < num_moves; ++j) {
-                if (move_scores[j] > move_scores[best_move_index]) {
-                    best_move_index = j;
-                }
+        // Find best scored move
+        for (int j = i + 1; j < num_moves; ++j) {
+            if (move_scores[j] > move_scores[best_move_index]) {
+                best_move_index = j;
             }
         }
 
+    score_done:
         const auto move = moves[best_move_index];
         const auto best_move_score = move_scores[best_move_index];
 
