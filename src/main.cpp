@@ -635,20 +635,7 @@ int alphabeta(Position &pos,
     auto &moves = stack[ply].moves;
     const int num_moves = movegen(pos, moves, in_qsearch);
 
-    // Score moves
     int64_t move_scores[256];
-    for (int j = 0; j < num_moves; ++j) {
-        const int capture = piece_on(pos, moves[j].to);
-        if (moves[j] == tt_move) {
-            move_scores[j] = 1LL << 62;
-        } else if (capture != None) {
-            move_scores[j] = ((capture + 1) * (1LL << 54)) - piece_on(pos, moves[j].from);
-        } else if (moves[j] == stack[ply].killer) {
-            move_scores[j] = 1LL << 50;
-        } else {
-            move_scores[j] = hh_table[pos.flipped][moves[j].from][moves[j].to];
-        }
-    }
 
     int num_moves_evaluated = 0;
     int num_quiets_evaluated = 0;
@@ -657,11 +644,33 @@ int alphabeta(Position &pos,
     uint16_t tt_flag = 1;  // Alpha flag
     hash_history.emplace_back(tt_key);
     for (int i = 0; i < num_moves; ++i) {
+        if (i == !(tt_move == no_move)) {
+            // Score moves
+            for (int j = 0; j < num_moves; ++j) {
+                const int capture = piece_on(pos, moves[j].to);
+                if (capture != None) {
+                    move_scores[j] = ((capture + 1) * (1LL << 54)) - piece_on(pos, moves[j].from);
+                } else if (moves[j] == stack[ply].killer) {
+                    move_scores[j] = 1LL << 50;
+                } else {
+                    move_scores[j] = hh_table[pos.flipped][moves[j].from][moves[j].to];
+                }
+            }
+        }
+
         // Find best move remaining
         int best_move_index = i;
-        for (int j = i; j < num_moves; ++j) {
-            if (move_scores[j] > move_scores[best_move_index]) {
-                best_move_index = j;
+        if (i == 0 && !(tt_move == no_move)) {
+            for (int j = 0; j < num_moves; ++j) {
+                if (moves[j] == tt_move) {
+                    best_move_index = j;
+                }
+            }
+        } else {
+            for (int j = i; j < num_moves; ++j) {
+                if (!(moves[j] == tt_move) && move_scores[j] > move_scores[best_move_index]) {
+                    best_move_index = j;
+                }
             }
         }
 
