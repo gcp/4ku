@@ -75,8 +75,9 @@ struct Move {
 const Move no_move{};
 
 struct [[nodiscard]] Stack {
-    Move moves[218];
-    Move quiets_evaluated[218];
+    Move moves[256];
+    Move quiets_evaluated[256];
+    int64_t move_scores[256];
     Move move;
     Move killer;
     int score;
@@ -632,18 +633,20 @@ int alphabeta(Position &pos,
         return 0;
     }
 
-    auto &moves = stack[ply].moves;
-    const int num_moves = movegen(pos, moves, in_qsearch);
-
-    int64_t move_scores[256];
+    uint16_t tt_flag = 1;  // Alpha flag
+    hash_history.emplace_back(tt_key);
 
     int num_moves_evaluated = 0;
     int num_quiets_evaluated = 0;
     int best_score = -INF;
     Move best_move{};
-    uint16_t tt_flag = 1;  // Alpha flag
-    hash_history.emplace_back(tt_key);
+
+    auto &moves = stack[ply].moves;
+    auto &move_scores = stack[ply].move_scores;
+    const int num_moves = movegen(pos, moves, in_qsearch);
     for (int i = 0; i < num_moves; ++i) {
+        // Sort at the first loop, except if we have a hash move,
+        // then we'll use that first and delay sorting.
         if (i == !(tt_move == no_move)) {
             // Score moves
             for (int j = 0; j < num_moves; ++j) {
@@ -660,17 +663,14 @@ int alphabeta(Position &pos,
 
         // Find best move remaining
         int best_move_index = i;
-        if (i == 0 && !(tt_move == no_move)) {
-            for (int j = 0; j < num_moves; ++j) {
+        for (int j = i; j < num_moves; ++j) {
+            if (i == 0 && !(tt_move == no_move)) {
                 if (moves[j] == tt_move) {
                     best_move_index = j;
+                    break;
                 }
-            }
-        } else {
-            for (int j = i; j < num_moves; ++j) {
-                if (!(moves[j] == tt_move) && move_scores[j] > move_scores[best_move_index]) {
-                    best_move_index = j;
-                }
+            } else if (!(tt_move == moves[j]) && move_scores[j] > move_scores[best_move_index]) {
+                best_move_index = j;
             }
         }
 
