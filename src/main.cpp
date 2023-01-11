@@ -645,10 +645,9 @@ int alphabeta(Position &pos,
     auto &move_scores = stack[ply].move_scores;
     const int num_moves = movegen(pos, moves, in_qsearch);
     for (int i = 0; i < num_moves; ++i) {
-        // Sort at the first loop, except if we have a hash move,
-        // then we'll use that first and delay sorting.
+        // Score at the first loop, except if we have a hash move,
+        // then we'll use that first and delay work until the second iteration.
         if (i == !(tt_move == no_move)) {
-            // Score moves
             for (int j = 0; j < num_moves; ++j) {
                 const int capture = piece_on(pos, moves[j].to);
                 if (capture != None) {
@@ -663,14 +662,21 @@ int alphabeta(Position &pos,
 
         // Find best move remaining
         int best_move_index = i;
-        for (int j = i; j < num_moves; ++j) {
-            if (i == 0 && !(tt_move == no_move)) {
+        // If there's a TT move, we'll find it in the first loop
+        // and needn't search nor compare further.
+        if (i == 0 && !(tt_move == no_move)) {
+            for (int j = 0; j < num_moves; ++j) {
                 if (moves[j] == tt_move) {
                     best_move_index = j;
                     break;
                 }
-            } else if (!(tt_move == moves[j]) && move_scores[j] > move_scores[best_move_index]) {
-                best_move_index = j;
+            }
+        } else {
+            // Find best scored move
+            for (int j = 0; j < num_moves; ++j) {
+                if (move_scores[j] > move_scores[best_move_index]) {
+                    best_move_index = j;
+                }
             }
         }
 
