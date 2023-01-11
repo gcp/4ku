@@ -171,10 +171,13 @@ vector<TT_Entry> transposition_table;
 
 [[nodiscard]] int piece_on(const Position &pos, const int sq) {
     const u64 bb = 1ULL << sq;
-    for (int i = 0; i < 6; ++i) {
-        if (pos.pieces[i] & bb) {
-            return i;
+    if ((pos.colour[0] | pos.colour[1]) & bb) {
+        for (int i = 0; i < 5; ++i) {
+            if (pos.pieces[i] & bb) {
+                return i;
+            }
         }
+        return King;
     }
     return None;
 }
