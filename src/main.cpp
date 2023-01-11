@@ -606,25 +606,28 @@ int alphabeta(Position &pos,
     }
 
     // TT Probing
-    TT_Entry &tt_entry = transposition_table[tt_key % num_tt_entries];
     Move tt_move{};
-    if (tt_entry.key == tt_key) {
-        tt_move = tt_entry.move;
-        if (ply > 0 && tt_entry.depth >= depth) {
-            if (tt_entry.flag == 0) {
-                return tt_entry.score;
-            }
-            if (tt_entry.flag == 1 && tt_entry.score <= alpha) {
-                return tt_entry.score;
-            }
-            if (tt_entry.flag == 2 && tt_entry.score >= beta) {
-                return tt_entry.score;
+    TT_Entry* tt_entry = nullptr;
+    if (!in_qsearch) {
+        tt_entry = &transposition_table[tt_key % num_tt_entries];
+        if (tt_entry->key == tt_key) {
+            tt_move = tt_entry->move;
+            if (ply > 0 && tt_entry->depth >= depth) {
+                if (tt_entry->flag == 0) {
+                    return tt_entry->score;
+                }
+                if (tt_entry->flag == 1 && tt_entry->score <= alpha) {
+                    return tt_entry->score;
+                }
+                if (tt_entry->flag == 2 && tt_entry->score >= beta) {
+                    return tt_entry->score;
+                }
             }
         }
-    }
-    // Internal iterative reduction
-    else if (depth > 3) {
-        depth--;
+        // Internal iterative reduction
+        else if (depth > 3) {
+            depth--;
+        }
     }
 
     // Exit early if out of time
@@ -796,9 +799,11 @@ int alphabeta(Position &pos,
     }
 
     // Save to TT
-    if (tt_entry.key != tt_key || depth >= tt_entry.depth || tt_flag == 0) {
-        tt_entry =
-            TT_Entry{tt_key, best_move == no_move ? tt_move : best_move, best_score, in_qsearch ? 0 : depth, tt_flag};
+    if (!in_qsearch) {
+        if (tt_entry->key != tt_key || depth >= tt_entry->depth || tt_flag == 0) {
+            *tt_entry = TT_Entry{
+                tt_key, best_move == no_move ? tt_move : best_move, best_score, in_qsearch ? 0 : depth, tt_flag};
+        }
     }
 
     return alpha;
