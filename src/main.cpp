@@ -542,7 +542,7 @@ int alphabeta(Position &pos,
     depth += !!in_check;
 
     const int in_qsearch = depth <= 0;
-    if (in_qsearch && static_eval > alpha) {
+    if (in_qsearch && !in_check && static_eval > alpha) {
         if (static_eval >= beta) {
             return beta;
         }
@@ -630,7 +630,7 @@ int alphabeta(Position &pos,
 
     auto &moves = stack[ply].moves;
     auto &move_scores = stack[ply].move_scores;
-    const int num_moves = movegen(pos, moves, in_qsearch);
+    const int num_moves = movegen(pos, moves, in_qsearch && !in_check);
 
     for (int i = 0; i < num_moves; ++i) {
         // Score moves at the first loop, except if we have a hash move,
@@ -771,7 +771,7 @@ int alphabeta(Position &pos,
 
         if (alpha >= beta) {
             tt_flag = 1;  // Beta flag
-            if (piece_on(pos, move.to) == None) {
+            if (!in_qsearch && piece_on(pos, move.to) == None) {
                 hh_table[pos.flipped][move.from][move.to] += depth * depth;
                 for (int j = 0; j < num_quiets_evaluated - 1; ++j) {
                     hh_table[pos.flipped][stack[ply].quiets_evaluated[j].from][stack[ply].quiets_evaluated[j].to] -=
