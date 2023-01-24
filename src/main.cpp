@@ -79,6 +79,7 @@ struct [[nodiscard]] Stack {
     Move moves[256];
     Move quiets_evaluated[256];
     int64_t move_scores[256];
+    int captured;
     Move move;
     Move killer;
     int score;
@@ -688,6 +689,11 @@ int alphabeta(Position &pos,
         if (!makemove(npos, move)) {
             continue;
         }
+        auto extension = 0;
+        stack[ply].captured = piece_on(pos, move.to);
+        if (ply > 0 && stack[ply].captured != None && stack[ply - 1].captured == stack[ply].captured) {
+            extension += 1;
+        }
 
         // minify enable filter delete
         nodes++;
@@ -699,7 +705,7 @@ int alphabeta(Position &pos,
             score = -alphabeta(npos,
                                -beta,
                                -alpha,
-                               depth - 1,
+                               depth + extension - 1,
                                ply + 1,
                                // minify enable filter delete
                                nodes,
@@ -721,7 +727,7 @@ int alphabeta(Position &pos,
             score = -alphabeta(npos,
                                -alpha - 1,
                                -alpha,
-                               depth - reduction - 1,
+                               depth + extension - reduction - 1,
                                ply + 1,
                                // minify enable filter delete
                                nodes,
