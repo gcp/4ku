@@ -370,7 +370,7 @@ const int rook_open = S(64, 7);
 const int rook_semi_open = S(31, 14);
 const int rook_rank78 = S(32, 1);
 const int king_shield[] = {S(40, -10), S(20, -16), S(-112, 32)};
-const int pawn_attacked[] = {S(-69, -28), S(-14, -116)};
+const int pawn_attacked[] = {S(-69, -28), S(-155, -142)};
 
 [[nodiscard]] int eval(Position &pos) {
     // Include side to move bonus
