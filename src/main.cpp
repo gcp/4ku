@@ -442,7 +442,7 @@ const int pawn_attacked[] = {S(-64, -14), S(-155, -142)};
                     }
 
                     // Doubled pawns
-                    if ((north(piece_bb) | north(north(piece_bb))) & pawns[0]) {
+                    if (ray(sq, 0, north) & pawns[0]) {
                         score += pawn_doubled;
                     }
                 } else if (p == Rook) {
