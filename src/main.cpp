@@ -348,26 +348,27 @@ void generate_piece_moves(Move *const movelist,
 }
 
 const int phases[] = {0, 1, 1, 2, 4, 0};
-const int max_material[] = {116, 352, 378, 662, 1227, 0, 0};
-const int material[] = {S(116, 109), S(352, 348), S(378, 365), S(472, 662), S(967, 1227), 0};
+const int max_material[] = {109, 352, 378, 662, 1227, 0, 0};
+const int material[] = {S(109, 107), S(352, 348), S(378, 365), S(472, 662), S(967, 1227), 0};
 const int pst_rank[][8] = {
-    {0, S(-9, 4), S(-10, 2), S(-6, 2), S(-2, 3), S(6, 4), S(3, -4), 0},
+    {0, S(-9, 4), S(-10, 2), S(-6, 2), S(-1, 3), S(8, 6), S(7, -2), 0},
     {S(-12, -5), S(-6, 0), S(-1, 4), S(4, 8), S(12, 9), S(20, 5), S(11, 2), S(-10, -1)},
     {S(-10, -3), S(-3, 1), S(1, 3), S(3, 5), S(5, 6), S(14, 2), S(4, 3), S(-13, 2)},
     {S(-1, -9), S(-4, -11), S(-5, -9), S(-5, -5), S(1, -2), S(9, -2), S(12, -1), S(5, 0)},
     {S(-8, -20), S(-4, -17), S(-4, -10), S(-6, 1), S(-2, 6), S(6, 3), S(-7, 11), S(-1, 3)},
     {S(-1, -8), S(5, -2), S(-9, 2), S(-11, 5), S(-10, 8), S(-2, 8), S(15, 3), S(-6, -1)},
 };
-const int pst_file[][4] = {{S(2, -5), S(9, -5), S(6, -5), S(7, -7)},
+const int pst_file[][4] = {{S(4, -6), S(8, -6), S(7, -6), S(8, -7)},
                            {S(-10, -9), S(-4, -5), S(2, -1), S(3, 1)},
                            {S(-4, -5), S(2, -3), S(1, -1), S(2, 0)},
                            {S(-3, 0), S(-2, 1), S(-1, 2), S(0, 1)},
                            {S(-9, 0), S(-6, 1), S(-4, 5), S(-3, 5)},
                            {S(-1, -3), S(1, 1), S(-10, 4), S(1, 1)}};
 const int pawn_protection[] = {S(20, 15), S(9, 12), S(2, 5), S(4, 7), S(-6, 19), S(-48, 27)};
-const int passers[] = {S(-31, 17), S(-19, 8), S(3, 20), S(19, 52), S(48, 119), S(132, 209)};
-const int pawn_doubled = S(-29, -25);
-const int pawn_passed_blocked[] = {S(16, -16), S(-35, -4), S(-55, -11), S(5, -35), S(6, -65), S(28, -75)};
+const int passers[] = {S(-19, 23), S(-12, 13), S(2, 29), S(23, 60), S(47, 116), S(133, 211)};
+const int pawn_doubled = S(-15, -14);
+const int pawn_isolated = S(-13, -7);
+const int pawn_passed_blocked[] = {S(19, -12), S(-32, 0), S(-21, -13), S(9, -32), S(8, -64), S(30, -79)};
 const int pawn_passed_king_distance[] = {S(3, -6), S(-6, 9)};
 const int bishop_pair = S(27, 68);
 const int rook_open = S(61, 7);
@@ -405,6 +406,7 @@ const int pawn_attacked[] = {S(-64, -14), S(-155, -142)};
 
                 const int rank = sq / 8;
                 const int file = sq % 8;
+                const u64 file_bb = 0x101010101010101ULL << file;
 
                 // Split quantized PSTs
                 score += pst_rank[p][rank] * 4;
@@ -422,8 +424,18 @@ const int pawn_attacked[] = {S(-64, -14), S(-155, -142)};
                 }
 
                 if (p == Pawn) {
-                    // Passed pawns
+                    // Isolated pawns
+                    if (!((west(file_bb) | east(file_bb)) & pawns[0])) {
+                        score += pawn_isolated;
+                    }
+
+                    // Doubled pawns
                     u64 blockers = 0x101010101010101ULL << sq;
+                    if ((blockers ^ piece_bb) & pawns[0]) {
+                        score += pawn_doubled;
+                    }
+
+                    // Passed pawns
                     blockers |= nw(blockers) | ne(blockers);
                     if (!(blockers & pawns[1])) {
                         score += passers[rank - 1];
@@ -440,14 +452,8 @@ const int pawn_attacked[] = {S(-64, -14), S(-155, -142)};
                                      max(abs((kings[i] / 8) - (rank + 1)), abs((kings[i] % 8) - file));
                         }
                     }
-
-                    // Doubled pawns
-                    if ((north(piece_bb) | north(north(piece_bb))) & pawns[0]) {
-                        score += pawn_doubled;
-                    }
                 } else if (p == Rook) {
                     // Rook on open or semi-open files
-                    const u64 file_bb = 0x101010101010101ULL << file;
                     if (!(file_bb & pawns[0])) {
                         if (!(file_bb & pawns[1])) {
                             score += rook_open;
