@@ -27,11 +27,16 @@
 #include <thread>
 #include <vector>
 // minify enable filter delete
+#include <omp.h>
+#include <cmath>
+#include <fstream>
+#include <iostream>
 #include <sstream>
 // minify disable filter delete
 
 #define MATE_SCORE (1 << 15)
 #define INF (1 << 16)
+#define T(x, y) S(x, y)
 
 using namespace std;
 
@@ -377,6 +382,12 @@ const int pawn_doubled = S(-29, -25);
 const int pawn_passed_blocked[] = {S(16, -16), S(-35, -4), S(-55, -11), S(5, -35), S(6, -65), S(28, -75)};
 const int pawn_passed_king_distance[] = {S(3, -6), S(-6, 9)};
 const int bishop_pair = S(27, 68);
+const int redundant_pawn = T(-7, -1);
+const int redundant_rook = T(-10, 3);
+const int redundant_knight = T(-2, -7);
+const int redundant_major = T(-10, -8);
+const int rook_plus_pawns = T(3, 3);
+const int knight_plus_pawns = T(0, 2);
 const int rook_open = S(61, 7);
 const int rook_semi_open = S(27, 20);
 const int king_shield[] = {S(52, -9), S(40, -10), S(-19, 2)};
@@ -398,6 +409,22 @@ const int pawn_attacked[] = {S(-64, -14), S(-155, -142)};
         if (count(pos.colour[0] & pos.pieces[Bishop]) == 2) {
             score += bishop_pair;
         }
+        // Rook pair
+        if (count(pos.colour[0] & pos.pieces[Rook]) == 2) {
+            score += redundant_rook;
+        }
+        // Knight pair
+        if (count(pos.colour[0] & pos.pieces[Knight]) == 2) {
+            score += redundant_knight;
+        }
+        // Majors
+        auto majors = count(pos.colour[0] & (pos.pieces[Queen] | pos.pieces[Rook]));
+        score += redundant_major * max(0, majors - 1);
+        // Pawns
+        auto pawn_cnt = count(pawns[0]);
+        score += pawn_cnt * redundant_pawn;
+        score += pawn_cnt * rook_plus_pawns * count(pos.colour[0] & pos.pieces[Rook]) ;
+        score += pawn_cnt * knight_plus_pawns * count(pos.colour[0] & pos.pieces[Knight]);
 
         // For each piece type
         for (int p = 0; p < 6; ++p) {
