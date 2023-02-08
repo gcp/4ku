@@ -374,6 +374,20 @@ const int rook_open = S(61, 7);
 const int rook_semi_open = S(27, 20);
 const int king_shield[] = {S(52, -9), S(40, -10), S(-19, 2)};
 const int pawn_attacked[] = {S(-64, -14), S(-155, -142)};
+const int material_2nd[][6][6] = {
+    {{S(0, 3), S(-2, 9), S(3, -10), S(-1, 4), S(-5, -1), 0},
+     {S(0, 3), S(-3, 3), S(-5, -1), S(3, -1), S(-2, 1), 0},
+     {S(3, -3), S(6, 7), S(2, -3), S(10, 5), S(-8, 1), 0},
+     {S(3, -1), S(-3, 10), S(-2, 0), S(-1, -5), S(-15, 0), 0},
+     {S(-9, 6), S(-15, -6), S(-7, -3), S(-13, -2), S(-5, 0), 0},
+     {0, 0, 0, 0, 0, 0}},
+    {{S(0, -3), S(-5, 5), S(8, -10), S(-3, -4), S(-2, -8), 0},
+     {S(0, 0), S(-4, -2), S(3, -8), S(0, -4), S(-10, 2), 0},
+     {S(0, 7), S(0, 3), S(-13, 4), S(-3, 2), S(2, -15), 0},
+     {S(-4, 3), S(-1, 1), S(-5, -3), S(2, 0), S(6, -8), 0},
+     {S(-1, 9), S(3, 12), S(3, 7), S(8, 18), S(-6, 4), 0},
+     {0, 0, 0, 0, 0, 0}},
+};
 
 [[nodiscard]] int eval(Position &pos) {
     // Include side to move bonus
@@ -410,8 +424,19 @@ const int pawn_attacked[] = {S(-64, -14), S(-155, -142)};
                 score += pst_rank[p][rank] * 4;
                 score += pst_file[p][min(file, 7 - file)] * 4;
 
-                // Pawn protection
+                // 2nd order material
                 const u64 piece_bb = 1ULL << sq;
+                for (int c2 = 0; c2 < 2; ++c2) {
+                    // Exclude ourselves
+                    auto pieces = pos.colour[c2] & ~piece_bb;
+                    while (pieces) {
+                        const int other_sq = lsb(pieces);
+                        pieces &= pieces - 1;
+                        score += material_2nd[c2][p][piece_on(pos, other_sq)];
+                    }
+                }
+
+                // Pawn protection
                 if (piece_bb & protected_by_pawns) {
                     score += pawn_protection[p];
                 }
