@@ -365,10 +365,11 @@ const int pst_file[][4] = {{S(2, -5), S(9, -5), S(6, -5), S(7, -7)},
                            {S(-9, 0), S(-6, 1), S(-4, 5), S(-3, 5)},
                            {S(4, -11), S(7, -7), S(-3, -4), S(-10, -3)}};
 const int pawn_protection[] = {S(20, 15), S(9, 12), S(2, 5), S(4, 7), S(-6, 19), S(-41, 23)};
-const int passers[] = {S(-31, 17), S(-19, 8), S(3, 20), S(19, 52), S(48, 119), S(132, 209)};
 const int pawn_doubled = S(-29, -25);
-const int pawn_passed_blocked[] = {S(16, -16), S(-35, -4), S(-55, -11), S(5, -35), S(6, -65), S(28, -75)};
-const int pawn_passed_king_distance[] = {S(3, -6), S(-6, 9)};
+const int passers[] = {S(-27, 9), S(-15, 11), S(3, 26), S(34, 49), S(65, 99), S(168, 195)};
+const int pawn_passed_blocked[] = {S(27, -6), S(0, -9), S(-20, -13), S(12, -36), S(15, -49), S(19, -83)};
+const int pawn_passed_pushable[] = {S(11, 6), S(16, -2), S(-3, 10), S(-8, 29), S(1, 73), S(14, 124)};
+const int pawn_passed_king_distance[] = {S(2, -6), S(-6, 8)};
 const int bishop_pair = S(27, 68);
 const int rook_open = S(61, 7);
 const int rook_semi_open = S(27, 20);
@@ -426,6 +427,10 @@ const int pawn_attacked[] = {S(-64, -14), S(-155, -142)};
                         // Blocked passed pawns
                         if (north(piece_bb) & pos.colour[1]) {
                             score += pawn_passed_blocked[rank - 1];
+                        } else if (!(north(piece_bb) & pos.colour[0])){
+                            if (!attacked(pos, sq + 8)) {
+                                score += pawn_passed_pushable[rank - 1];
+                            }
                         }
 
                         // King defense/attack
